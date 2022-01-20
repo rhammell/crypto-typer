@@ -325,11 +325,12 @@ function randomWords(num) {
 }
 
 async function initiateChallenge() {
-  await Moralis.enableWeb3();
   
   // Check metamask 
-  const metaInstalled = await Moralis.Web3.isMetaMaskInstalled();
-  if (!metaInstalled) {
+  try {
+    await Moralis.enableWeb3();
+    const metaInstalled = await Moralis.Web3.isMetaMaskInstalled();
+  } catch(error) {
     displayMessage('01', '<a target="_blank" href="https://metamask.io/">MetaMask</a> must be installed to communicate with the blockchain.');
     return;
   } 
