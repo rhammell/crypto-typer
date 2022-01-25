@@ -13,23 +13,19 @@ const { json } = require('express/lib/response');
 const contract = new web3.eth.Contract(contractDetails.abi, contractDetails.address);
 
 async function endGame(gameId, outcome) {
-	console.log('endGame');
-	console.log(NODE_URL);
   const accounts = await web3.eth.getAccounts();
 	const account = accounts[0];
-	const nonce = await web3.eth.getTransactionCount(account);
-	console.log(nonce);
-  const tx = await contract.methods.endGame(gameId, false).send({
-		from: account,
-		nonce: web3.utils.toHex(nonce)
-	})
+  const tx = await contract.methods.endGame(gameId, false).send({from: account})
 	return tx;
 }
 
 async function getDifficulty() {
-	console.log('getDifficulty');
   const difficulty = await contract.methods.difficulty().call();
-  return parseInt(difficulty);
+	return difficulty;
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 module.exports = {
