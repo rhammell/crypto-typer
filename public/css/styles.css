@@ -27,6 +27,11 @@ a{
 .center{
   text-align: center;
 }
+
+.inline {
+  display: inline;
+}
+
 .if{
   display: inline-flex;
 }
@@ -48,13 +53,18 @@ a{
   font-weight: 500;
 }
 
-#acceptBtn {
-  float: right;
+#bets {
+  margin-top: 50px;
+  color: white;
 }
 
-#messageBox {
-  margin-top: 40px;
-  margin-bottom: 40px;
+#messages {
+  margin-top: 50px;
+  color: white;
+}
+
+#alerts {
+  margin-top: 50px;
 }
 
 .stats{
@@ -86,10 +96,9 @@ a{
 }
 
 .text-display{
-  margin: 0 0 90px 0;
   font-size: 21px;
   text-align: left;
-  min-height: 65px;
+  min-height: 180px;
 }
 
 input:focus, textarea:focus, select:focus, a:focus{
@@ -107,6 +116,11 @@ footer{
 
 .restart-button{
   padding: 10px;
+}
+
+#restartBtn {
+  display: none;
+  text-decoration: none;
 }
 
 textarea{

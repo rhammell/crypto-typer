@@ -1,151 +1,27 @@
 const textDisplay = $("#textDisplay");
 const textInput = $("#textInput");
 const timeName = $("#timeName");
-const messageBox = $("#messageBox");
+const alerts = $("#alerts");
+const messages = $("#messages");
 const time = $("#time");
+const bets = $("#bets");
+const bet = $("#bet");
 const restartBtn = $("#restartBtn");
 const betBtns = $('.betBtn');
 
 let wordNo = 1;
 let wordsCorrect = 0;
-let timer = 30;
+let timer = 10;
 let flag = 0;
+let gameId = -1;
 let seconds;
 let numWords;
-
-const networkDetails = {
-  "chainId": 80001, 
-  "chainName": "Polygon Mumbai Testnet",
-  "currencyName": "MATIC",
-  "currencySymbol": "MATIC",
-  "rpcUrl": "https://rpc-mumbai.maticvigil.com/",
-  "blockExplorerUrl": "https://mumbai.polygonscan.com/",
-  "moralisName": "mumbai"
-}
-
-const serverUrl = "https://bzqvr83sfvmq.usemoralis.com:2053/server";
-const appId = "1Cw7gzY2y533U8ADF7eH8FtSpWtmFRDhsrJMD0e2";
-
-const requiredChainId = networkDetails.chainId;
-const contractAddress = "0xbCB8b2d93e415030E72320F296D2A1Bc320bC7B4";
-const contractABI = [
-	{
-		"inputs": [],
-		"stateMutability": "nonpayable",
-		"type": "constructor"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "difficulty",
-				"type": "uint256"
-			}
-		],
-		"name": "DifficultyUpdated",
-		"type": "event"
-	},
-	{
-		"inputs": [],
-		"name": "newGame",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "payable",
-		"type": "function"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "previousOwner",
-				"type": "address"
-			},
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "newOwner",
-				"type": "address"
-			}
-		],
-		"name": "OwnershipTransferred",
-		"type": "event"
-	},
-	{
-		"inputs": [],
-		"name": "renounceOwnership",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_difficulty",
-				"type": "uint256"
-			}
-		],
-		"name": "setDifficulty",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "newOwner",
-				"type": "address"
-			}
-		],
-		"name": "transferOwnership",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "getDifficulty",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "owner",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	}
-]
 
 textInput.on("input", inputCheck);
 textInput.on("keydown", backspaceCheck);
 restartBtn.on("click", restart);
 betBtns.on("click", initiateChallenge);
 
-Moralis.start({ serverUrl, appId });
 displayTest();
 
 function backspaceCheck(event) {
@@ -181,50 +57,52 @@ function inputCheck(event) {
 };
 
 function restart() {
+  wordNo = 1;
   wordsCorrect = 0;
   flag = 0;
+  gameId = -1;
 
   time.removeClass("current");
   time.text(timer);
   timeName.text("Time");
-  textInput.prop('disabled', false);
-  textInput.val('');;
-  textInput.focus();
-  betBtns.prop('disabled', false);
+  textDisplay.html('');
+  restartBtn.hide();
+  bet.text('.00');
+  hideMessage();
+  showBets();
+  unhighlightStats();
+  enableInput();
+  enableBets();
 
-  
   clearInterval(seconds);
   displayTest();
 };
 
-
 function timeStart() {
-  betBtns.prop('disabled', true);
-  restartBtn.hide();
+  clearAlerts();
+  disableBets();
+
   seconds = setInterval(function() {
-    time.text(time.text() -1);
+    time.text(time.text() -1);  
     if (time.text() == "-1") {
-      endGame();
+      timeEnd();
     }
   }, 1000);
 }
 
-function timeOver() {
-  textInput.prop('disabled', true);
-  restartBtn.show();
-  displayScore();
-}
-
-function endGame() {
-  timeOver();
+function timeEnd() {
   clearInterval(seconds);
+  restartBtn.show();
+  disableInput();
+  displayScore();
+  processResult();
+  console.log('done');
 }
 
 function displayScore(){
   let percentageAcc = Math.floor((wordsCorrect / numWords) * 100);
-  time.addClass("current");
   time.text(percentageAcc + "%");
-  timeName.text("PA");
+  timeName.text("PC");
 }
 
 function currentWord() {
@@ -255,7 +133,7 @@ function checkWord() {
   }
 
   if (wordNo > numWords){
-    endGame();
+    timeEnd();
   } else{
     const nextId = "word" + wordNo;
     colorSpan(nextId, 2);
@@ -279,37 +157,42 @@ function colorSpan(id, color) {
   }
 }
 
-async function displayTest() {
-  wordNo = 1;
-  textDisplay.html('');
+async function getDifficulty() {
+  const response = await fetch('/contract/getDifficulty');
 
-  const nativeOptions = {
-    chain: networkDetails.moralisName,
-    address: contractAddress,
-    abi: contractABI,
-    function_name: "getDifficulty",
-  };
-
-  try {
-    numWords = await Moralis.Web3API.native.runContractFunction(nativeOptions);
-  } catch (error) {
-    betBtns.prop("disabled", true);
-    textInput.prop('disabled', true);
-    displayMessage('01', 'Error loading Dapp. Could not read from smart contract.<br><br>Chain: ' + networkDetails.chainName + '<br>Address: ' + contractAddress);
-    return;
+  if (!response.ok) {
+    const message = `An error has occured: ${response.status}`;
+    throw new Error(message);
   }
 
-  let newWords = randomWords(numWords);
-  newWords.forEach(function(word, i) {
-    var wordSpan = $("<span></span>");
-    wordSpan.text(word);
-    wordSpan.attr("id", "word" + (i+1));
-    textDisplay.append(wordSpan);
-    textDisplay.append(" ");
-  });
+  const data = await response.json();
+  return data;
+}
 
-  const nextId = "word" + wordNo;
-  colorSpan(nextId, 2);
+function displayTest() {
+
+  getDifficulty()
+    .then(data => {
+      numWords = data.difficulty;
+
+      let newWords = randomWords(numWords);
+      newWords.forEach(function(word, i) {
+        var wordSpan = $("<span></span>");
+        wordSpan.text(word);
+        wordSpan.attr("id", "word" + (i+1));
+        textDisplay.append(wordSpan);
+        textDisplay.append(" ");
+      });
+    
+      const nextId = "word" + wordNo;
+      colorSpan(nextId, 2);
+    })
+    .catch(error => {
+      disableBets();
+      textInput.prop('disabled', true);
+      displayAlert('01', 'Error loading Dapp. Could not read from smart contract.<br><br>Chain: ' + networkDetails.chainName + '<br>Address: ' + contractAddress);
+      return;
+    })
 }
 
 function randomWords(num) {
@@ -325,56 +208,109 @@ function randomWords(num) {
 }
 
 async function initiateChallenge() {
-  
+  if (flag == 1) {
+    return; 
+  }
+
+  clearAlerts();
+  disableBets();
+  disableInput();
+
   // Check metamask 
-  try {
-    await Moralis.enableWeb3();
-    const metaInstalled = await Moralis.Web3.isMetaMaskInstalled();
-  } catch(error) {
-    displayMessage('01', '<a target="_blank" href="https://metamask.io/">MetaMask</a> must be installed to communicate with the blockchain.');
+  const metaInstalled = await Moralis.isMetaMaskInstalled();
+  if (!metaInstalled) {
+    displayAlert('01', '<a target="_blank" href="https://metamask.io/">MetaMask</a> must be installed to communicate with the blockchain.');
+    enableBets();
+    enableInput();
     return;
-  } 
+  }
+
+  // Enable web3
+  await Moralis.enableWeb3();
 
   // Switch to required network
   const currentChainId = await Moralis.getChainId();
   if (currentChainId != requiredChainId) {
     const requiredNetworkName = getNetworkName(requiredChainId);
-    try {
-      await Moralis.switchNetwork(requiredChainId);
-    } catch(error) {
-      if (error.code == 4902) {
-        displayMessage('02', 'MetaMask must be connected to the <b>' + requiredNetworkName + '</b> to place a bet.<br><br> <a class="alert-link" data-bs-dismiss="alert" href="#" onClick="addNetwork()">Add This Network</a>');
-      }
-      return;
-    }
+    displayAlert('01', 'MetaMask must be connected to the <b>' + requiredNetworkName + '</b> before placing a bet.<br><br> <a class="alert-link" data-bs-dismiss="alert" href="#" onClick="switchNetwork()">Switch to this Network</a>');
+    enableBets();
+    enableInput();
+    return;
   }
 
   // Get bet value
   const maticBet = parseFloat($(this).data().value);
 
+  // Get contract details 
+  var response = await fetch('/contract/details');
+  var contractDetails = await response.json();
+  console.log(contractDetails);
+
+  // Set transaction options
   const options = {
-    contractAddress: contractAddress,
-    abi: contractABI,
+    contractAddress: contractDetails.address,
+    abi: contractDetails.abi,
     functionName: "newGame",
     msgValue: Moralis.Units.ETH(maticBet)
   };
 
-  const receiptallowance = await Moralis.executeFunction(options);
-  console.log(receiptallowance);
+  // Make transaction
+  let transaction; 
+  try {
+    transaction = await Moralis.executeFunction(options);
+  } catch(error) {
+    if (error.code != 4001) {
+      console.log(error);
+      let msg = 'Error sending transaction to smart contract';
+      let err = error.data ? ': <br>' + error.data.message : '.';
+      displayAlert('02', msg + err);
+    }
+    enableBets();
+    enableInput();
+    return;
+  }
 
+  // Process transaction result
+  try {
+    hideBets();
+    showPending();
+    const result = await transaction.wait(1);
+    const contractEvent = result.events.filter((event) => event.args)[0];
+    gameId = contractEvent.args.id.toNumber();
+    player = contractEvent.args.id.toNumber();
+    betValue = Moralis.Units.FromWei(contractEvent.args.bet);
+    betValue = betValue[0] == '0' && betValue.length > 0 ? betValue.slice(1) : betValue
+    bet.text(betValue);
+    highlightStats();
+    showStart();
+    enableInput();
+  } catch(error) {
+    console.log(error);
+    displayAlert('02', 'Error processing results of transaction.');
+    showBets();
+    enableBets();
+    enableInput();
+    hideMessage();
+    return;
+  }
 
-  alert('new game created');
 };
 
-async function addNetwork() {
-  await Moralis.addNetwork(
-    networkDetails.chainId, 
-    networkDetails.chainName, 
-    networkDetails.currencyName, 
-    networkDetails.currencySymbol, 
-    networkDetails.rpcUrl,
-    networkDetails.blockExplorerUrl
-  );
+async function switchNetwork() {
+  try {
+    await Moralis.switchNetwork(requiredChainId);
+  } catch(error) {
+    if (error.code == 4902) {
+      await Moralis.addNetwork(
+        networkDetails.chainId, 
+        networkDetails.chainName, 
+        networkDetails.currencyName, 
+        networkDetails.currencySymbol, 
+        networkDetails.rpcUrl,
+        networkDetails.blockExplorerUrl
+      );
+    }
+  }
 }
 
 function getNetworkName(chainID){
@@ -383,16 +319,112 @@ function getNetworkName(chainID){
       4:"Ethereum Rinkeby",
       97:"Binance Smart Chain Testnet",
       43114: "Avalanche Mainnet",
+      43113: "Avalanche Testnet",
       80001:"Polygon Mumbai Testnet"
   }
   return networks[chainID];
 }
 
-function displayMessage(messageType, message){
-  messages = {
+function displayAlert(alertType, message){
+  alertMessages = {
       "00": '<div class="alert alert-success alert-dismissible" role="alert">' + message + '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>',
       "01": '<div class="alert alert-danger alert-dismissible" role="alert">' + message + '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>',
       "02": '<div class="alert alert-warning alert-dismissible" role="alert">' + message + '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>',
   }
-  messageBox.html(messages[messageType]);
+  alerts.html(alertMessages[alertType]);
+}
+
+function processResult() {
+  const win = wordsCorrect >= numWords;
+
+  if (win) {
+    showWin();
+  } else {
+    showLoss();
+  }
+
+  endGame(gameId, win)
+    .then(data => {
+      const tx = data.tx;
+      console.log(tx);
+    })
+    .catch(error => {
+      console.log(error);
+    })
+
+
+
+}
+
+async function endGame(gameId, win) {
+  const response = await fetch('/contract/endgame/' + gameId + '/' + +win);
+
+  if (!response.ok) {
+    const message = `An error has occured: ${response.status}`;
+    throw new Error(message);
+  }
+
+  const data = await response.json();
+  return data;
+}
+
+function clearAlerts() {
+  alerts.html('');
+}
+
+function disableBets() {
+  betBtns.prop('disabled', true);
+}
+
+function enableBets() {
+  betBtns.prop('disabled', false);
+}
+
+function enableInput() {
+  textInput.prop('disabled', false);
+  textInput.val('');
+  textInput.focus();
+}
+
+function disableInput() {
+  textInput.val('');
+  textInput.prop('disabled', true);
+}
+
+function showPending() {
+  messages.html('<div class="spinner-border spinner-border-sm text-light" role="status"></div><p class="inline"> Transaction pending...</p>');
+}
+
+function showWin() {
+  messages.html('<p>You won!</p>');
+}
+
+function showLoss() {
+  messages.html('<p>You lost. Sorry.</p>');
+}
+
+function showStart() {
+  messages.html('<p>MATIC bet received. Begin typing below.</p>')
+}
+
+function hideMessage() {
+  messages.html('');
+}
+
+function highlightStats() {
+  bet.addClass('current');
+  time.addClass('current');
+}
+
+function unhighlightStats() {
+  bet.removeClass('current');
+  time.removeClass('current');
+}
+
+function showBets() {
+  bets.show();
+}
+
+function hideBets() {
+  bets.hide();
 }
