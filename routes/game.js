@@ -27,6 +27,7 @@ router.get('/endgame/:id/:result', async (req, res) => {
       res.json({'transaction': transaction})
     })
     .catch(error => {
+      console.log(error);
       res.status(500); 
       res.json({'msg': 'Error interacting with smart contract.'});
     })

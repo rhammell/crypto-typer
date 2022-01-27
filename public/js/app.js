@@ -380,6 +380,7 @@ function processResult() {
       return response.json();
     })
     .then(data => {
+      console.log(data);
       const transaction = data.transaction;
       console.log(transaction);
       if (win) {
@@ -391,7 +392,7 @@ function processResult() {
     .catch(error => {
       disableBets();
       disableInput();
-      displayAlert('01', 'Error processing resault.');
+      displayAlert('01', 'Error processing result.');
     })
 }
 
