@@ -1,11 +1,12 @@
 const textDisplay = $("#textDisplay");
 const textInput = $("#textInput");
-const timeName = $("#timeName");
+const timeLabel = $("#timeLabel");
 const alerts = $("#alerts");
 const messages = $("#messages");
 const time = $("#time");
 const bets = $("#bets");
 const bet = $("#bet");
+const betLabel = $("#betLabel");
 const restartBtn = $("#restartBtn");
 const betBtns = $('.betBtn');
 
@@ -65,9 +66,10 @@ function restart() {
 
   time.removeClass("current");
   time.text(timer);
-  timeName.text("Time");
+  timeLabel.text("Time");
   textDisplay.html('');
   restartBtn.hide();
+  betLabel.text("Bet");
   bet.text('.00');
   clearAlerts()
   hideMessage();
@@ -96,14 +98,7 @@ function timeEnd() {
   clearInterval(seconds);
   restartBtn.show();
   disableInput();
-  displayScore();
   processResult();
-}
-
-function displayScore(){
-  let percentageAcc = Math.floor((wordsCorrect / numWords) * 100);
-  time.text(percentageAcc + "%");
-  timeName.text("PC");
 }
 
 function currentWord() {
@@ -191,6 +186,7 @@ function displayTest() {
     })
     .then(data => {
       numWords = data.difficulty;
+      numWords = 5;
 
       const newWords = randomWords(numWords);
       newWords.forEach(function(word, i) {
@@ -235,7 +231,7 @@ async function initiateChallenge() {
   // Check metamask 
   const metaInstalled = await Moralis.isMetaMaskInstalled();
   if (!metaInstalled) {
-    displayAlert('01', '<a target="_blank" href="https://metamask.io/">MetaMask</a> must be installed to communicate with the blockchain.');
+    displayAlert('02', 'Could not connect to the blockchain. Please install  <a target="_blank" href="https://metamask.io/">MetaMask</a> to place a bet.');
     enableBets();
     enableInput();
     return;
@@ -248,7 +244,7 @@ async function initiateChallenge() {
   const currentChainId = await Moralis.getChainId();
   if (currentChainId != requiredChainId) {
     const requiredNetworkName = getNetworkName(requiredChainId);
-    displayAlert('01', 'MetaMask must be connected to the <b>' + requiredNetworkName + '</b> before placing a bet.<br><br> <a class="alert-link" data-bs-dismiss="alert" href="#" onClick="switchNetwork()">Switch to this Network</a>');
+    displayAlert('02', 'MetaMask must be connected to the <b>' + requiredNetworkName + '</b> to place a bet.<br><br> <a class="alert-link" data-bs-dismiss="alert" href="#" onClick="switchNetwork()">Switch to this Network</a>');
     enableBets();
     enableInput();
     return;
@@ -275,7 +271,7 @@ async function initiateChallenge() {
     gameId = contractEvent.args.id.toNumber();
     let player = contractEvent.args.id.toNumber();
     let betValue = Moralis.Units.FromWei(contractEvent.args.bet);
-    betValue = betValue[0] == '0' && betValue.length > 0 ? betValue.slice(1) : betValue
+    betValue = formatFloat(betValue);
     bet.text(betValue);
     highlightStats();
     showStart();
@@ -324,22 +320,45 @@ function getNetworkName(chainID){
   return networks[chainID];
 }
 
+function formatFloat(val) {
+  val = val.toString();
+  val = val[0] == '0' && val.length > 0 ? val.slice(1) : val
+  val = val.length == 2 ? val + '0' : val;
+  return val;
+}
+
+
 function displayAlert(alertType, message){
-  alertMessages = {
-      "00": '<div class="alert alert-success alert-dismissible" role="alert">' + message + '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>',
-      "01": '<div class="alert alert-danger alert-dismissible" role="alert">' + message + '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>',
-      "02": '<div class="alert alert-warning alert-dismissible" role="alert">' + message + '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>',
+  alertTypes = {
+    "00": "alert-success",
+    "01": "alert-danger",
+    "02": "alert-warning"
   }
-  alerts.html(alertMessages[alertType]);
+  let alert = `<div class="alert ${alertTypes[alertType]} alert-dismissible" role="alert">${message}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`;
+  alerts.html(alert);
 }
 
 function processResult() {
   const win = wordsCorrect >= numWords;
+  const percentCorrect = Math.floor((wordsCorrect / numWords) * 100);
+  time.text(percentCorrect + "%");
+  timeLabel.text("PC");
+  betLabel.text("Won");
+
+  if (gameId == -1) {
+    return; 
+  }
 
   if (win) {
-    showWin();
+    messages.html(
+      '<div class="spinner-border spinner-border-sm text-light" role="status"></div><p class="inline"> Woohoo! You won! Releasing winnings now...</p>'
+    );
+    let wonValue = (bet.text() * 2);
+    wonValue = formatFloat(wonValue);
+    bet.text(wonValue);
   } else {
-    showLoss();
+    messages.html('<p>Almost! </p>');
+    bet.text('.00');
   }
 
   fetch('/contract/endgame/' + gameId + '/' + +win)
@@ -352,7 +371,12 @@ function processResult() {
     })
     .then(data => {
       const transaction = data.transaction;
-      console.log(transaction)
+      console.log(transaction);
+      if (win) {
+        messages.html(
+          `Your winning have been sent! View transaction <a target="_blank" href="${networkDetails.blockExplorerUrl}/tx/${transaction.transactionHash}">here</a>.`
+        );
+      }
     })
     .catch(error => {
       disableBets();
@@ -386,14 +410,6 @@ function disableInput() {
 
 function showPending() {
   messages.html('<div class="spinner-border spinner-border-sm text-light" role="status"></div><p class="inline"> Transaction pending...</p>');
-}
-
-function showWin() {
-  messages.html('<p>You won!</p>');
-}
-
-function showLoss() {
-  messages.html('<p>You lost. Sorry.</p>');
 }
 
 function showStart() {

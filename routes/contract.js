@@ -15,7 +15,8 @@ const contract = new web3.eth.Contract(contractDetails.abi, contractDetails.addr
 async function endGame(gameId, outcome) {
   const accounts = await web3.eth.getAccounts();
 	const account = accounts[0];
-  const tx = await contract.methods.endGame(gameId, false).send({from: account})
+	const tf = outcome == 1; 
+  const tx = await contract.methods.endGame(gameId, tf).send({from: account})
 	return tx;
 }
 
