@@ -1,7 +1,7 @@
 require('dotenv').config();
 
 const HDWalletProvider = require('@truffle/hdwallet-provider');
-const { MNEMONIC } = process.env;
+const { MNEMONIC, SNOWTRACE_API_KEY } = process.env;
 
 module.exports = {
   networks: {
@@ -31,10 +31,8 @@ module.exports = {
   plugins: [
     'truffle-plugin-verify'
   ],
-  /*
   api_keys: {
-    etherscan: ETHERSCAN_API_KEY,
+  //  etherscan: ETHERSCAN_API_KEY,
     snowtrace: SNOWTRACE_API_KEY
   }
-  */
 };

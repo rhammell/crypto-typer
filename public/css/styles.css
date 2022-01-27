@@ -11,8 +11,10 @@ body{
 a{
   color: #52575d;
 }
+
 .yellow{
   color: #ffd369;
+  text-decoration: none;
 }
 .correct{
   color: #29bb89;
@@ -56,11 +58,15 @@ a{
 #bets {
   margin-top: 50px;
   color: white;
+  height: 80px;
 }
 
 #messages {
   margin-top: 50px;
   color: white;
+  text-decoration: none;
+  height: 80px;
+  display: none;
 }
 
 #alerts {
@@ -86,13 +92,6 @@ a{
   .stat-block{
     min-width: 0;
   }
-}
-
-.stat-name{
-  font-size: 1rem;
-  position: relative;
-  top: 45px;
-  right: 5px;
 }
 
 .text-display{

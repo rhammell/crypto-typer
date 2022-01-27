@@ -12,7 +12,7 @@ const betBtns = $('.betBtn');
 
 let wordNo = 1;
 let wordsCorrect = 0;
-let timer = 10;
+let timer = 30;
 let flag = 0;
 let gameId = -1;
 let seconds;
@@ -71,7 +71,8 @@ function restart() {
   restartBtn.hide();
   betLabel.text("Bet");
   bet.text('.00');
-  clearAlerts()
+  clearAlerts();
+  hideMessages();
   hideMessage();
   showBets();
   unhighlightStats();
@@ -84,6 +85,9 @@ function restart() {
 
 function timeStart() {
   clearAlerts();
+  hideBets();
+  showPracticeStart();
+  showMessages();
   disableBets();
 
   seconds = setInterval(function() {
@@ -186,7 +190,6 @@ function displayTest() {
     })
     .then(data => {
       numWords = data.difficulty;
-      numWords = 5;
 
       const newWords = randomWords(numWords);
       newWords.forEach(function(word, i) {
@@ -265,6 +268,7 @@ async function initiateChallenge() {
   try {
     transaction = await Moralis.executeFunction(options);
     hideBets();
+    showMessages();
     showPending();
     const result = await transaction.wait(1);
     const contractEvent = result.events.filter((event) => event.args)[0];
@@ -283,6 +287,7 @@ async function initiateChallenge() {
       let err = error.data ? ': <br>' + error.data.message : '.';
       displayAlert('02', msg + err);
     }
+    hideMessages();
     showBets();
     hideMessage();
     enableBets();
@@ -346,6 +351,11 @@ function processResult() {
   betLabel.text("Won");
 
   if (gameId == -1) {
+    if (win) {
+      messages.html('<p>Nice practice run! Start a new challenge and place a bet to win AVAX.</p>');
+    } else {
+      messages.html('<p>Almost! Start a new challenge to keep practicing, and place a bed to win AVAX.</p>');
+    }
     return; 
   }
 
@@ -357,7 +367,7 @@ function processResult() {
     wonValue = formatFloat(wonValue);
     bet.text(wonValue);
   } else {
-    messages.html('<p>Almost! </p>');
+    messages.html('<p>Almost! Start a new challenge to win AVAX.</p>');
     bet.text('.00');
   }
 
@@ -374,7 +384,7 @@ function processResult() {
       console.log(transaction);
       if (win) {
         messages.html(
-          `Your winning have been sent! View transaction <a target="_blank" href="${networkDetails.blockExplorerUrl}/tx/${transaction.transactionHash}">here</a>.`
+          `Your AVAX reward has been sent! View transaction <a class="yellow" target="_blank" href="${networkDetails.blockExplorerUrl}/tx/${transaction.transactionHash}">here</a>.`
         );
       }
     })
@@ -416,6 +426,10 @@ function showStart() {
   messages.html('<p>AVAX bet received. Begin typing below to start.</p>')
 }
 
+function showPracticeStart() {
+  messages.html('Practice challenge started.')
+}
+
 function hideMessage() {
   messages.html('');
 }
@@ -436,4 +450,12 @@ function showBets() {
 
 function hideBets() {
   bets.hide();
+}
+
+function showMessages() {
+  messages.show();
+}
+
+function hideMessages() {
+  messages.hide();
 }
