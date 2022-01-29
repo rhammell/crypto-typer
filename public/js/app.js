@@ -385,7 +385,7 @@ function processResult() {
       console.log(transaction);
       if (win) {
         messages.html(
-          `Your AVAX reward has been sent! View transaction <a class="yellow" target="_blank" href="${networkDetails.blockExplorerUrl}/tx/${transaction.transactionHash}">here</a>.`
+          `Your AVAX reward has been sent! View transaction <a class="yellow" target="_blank" href="${networkDetails.blockExplorerUrl}tx/${transaction.transactionHash}">here</a>.`
         );
       }
     })
