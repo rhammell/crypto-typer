@@ -86,7 +86,9 @@ function restart() {
 function timeStart() {
   clearAlerts();
   hideBets();
-  showPracticeStart();
+  if (gameId == -1) {
+    showPracticeStart();
+  }
   showMessages();
   disableBets();
 
@@ -354,7 +356,7 @@ function processResult() {
     if (win) {
       messages.html('<p>Nice practice run! Start a new challenge and place a bet to win AVAX.</p>');
     } else {
-      messages.html('<p>Almost! Start a new challenge to keep practicing, and place a bed to win AVAX.</p>');
+      messages.html('<p>Almost! Start a new challenge to keep practicing, and place a bet to win AVAX.</p>');
     }
     return; 
   }
